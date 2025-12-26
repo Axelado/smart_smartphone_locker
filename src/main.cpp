@@ -1,21 +1,35 @@
 #include <Arduino.h>
 #include "LCD_I2C.h"
+#include "Button.h"
+#include "Relay.h"
+#include "Locker.h"
 
-LCD_I2C lcd(0x27, 16, 2);  // adresse I2C 0x27, 16 colonnes, 2 lignes
+#define BUTTON_OK_PIN D5
+#define BUTTON_MINUS_PIN D6
+#define BUTTON_PLUS_PIN D7
+#define RELAY_LOCK_PIN D8
+
+LCD_I2C lcd(0x27, 16, 2);
+Button buttonOk(BUTTON_OK_PIN);
+Button buttonMinus(BUTTON_MINUS_PIN);
+Button buttonPlus(BUTTON_PLUS_PIN);
+Relay lockRelay(RELAY_LOCK_PIN, true);
+
+Locker locker(&lcd, &lockRelay, &buttonPlus, &buttonMinus, &buttonOk);
 
 void setup() {
-    Serial.begin(115200);
-    lcd.begin();
-    lcd.printLine(0, "Hello World!");
-    lcd.printLine(1, "LCD I2C Test");
+	Serial.begin(115200);
+	lcd.begin();
+	buttonOk.begin();
+	buttonMinus.begin();
+	buttonPlus.begin();
+	lockRelay.begin();
+
+	// Locker begin will check persistence and start timer if needed
+	locker.begin();
 }
 
 void loop() {
-    static unsigned long lastTime = 0;
-    unsigned long now = millis();
-    if (now - lastTime > 1000) {
-        lastTime = now;
-        lcd.setCursor(0,1);
-        lcd.print("Millis: " + String(now/1000));
-    }
+	locker.update();
+	delay(10);
 }
