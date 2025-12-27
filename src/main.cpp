@@ -5,7 +5,7 @@
 #include "Locker.h"
 
 #define BUTTON_OK_PIN D5
-#define BUTTON_MINUS_PIN D6
+#define BUTTON_MINUS_PIN D3
 #define BUTTON_PLUS_PIN D7
 #define RELAY_LOCK_PIN D8
 
@@ -19,14 +19,20 @@ Locker locker(&lcd, &lockRelay, &buttonPlus, &buttonMinus, &buttonOk);
 
 void setup() {
 	Serial.begin(115200);
+	delay(1000);
+	Serial.println("\n========== Smart Smartphone Locker START ==========");
+	Serial.println("Initializing LCD...");
 	lcd.begin();
+	Serial.println("Initializing Buttons...");
 	buttonOk.begin();
 	buttonMinus.begin();
 	buttonPlus.begin();
+	Serial.println("Initializing Relay...");
 	lockRelay.begin();
-
+	Serial.println("Initializing Locker...");
 	// Locker begin will check persistence and start timer if needed
 	locker.begin();
+	Serial.println("===== Initialization Complete =====");
 }
 
 void loop() {

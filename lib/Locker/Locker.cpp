@@ -14,14 +14,20 @@ void Locker::begin() {
     // init LittleFS (safe to call repeatedly)
     if (!LittleFS.begin()) {
         // If LittleFS fails, continue without persistence
-        Serial.println("LittleFS init failed");
+        Serial.println("[Locker] ERROR: LittleFS init failed");
+    } else {
+        Serial.println("[Locker] LittleFS initialized");
     }
 
     if (readSavedTimer(remainingMs) && remainingMs > 0) {
         // Start timer with saved remaining milliseconds (rounded up to seconds)
+        Serial.print("[Locker] Resuming saved timer: ");
+        Serial.print(remainingMs);
+        Serial.println(" ms");
         startTimer((remainingMs + 999) / 1000);
         goToState(State::Closed);
     } else {
+        Serial.println("[Locker] No saved timer found, starting in Open state");
         goToState(State::Open);
     }
 }
@@ -117,12 +123,14 @@ void Locker::goToState(State s) {
     _state = s;
     switch (s) {
         case State::Open:
+            Serial.println("[Locker] State -> OPEN");
             if (_lcd) {
                 _lcd->clear();
                 _lcd->printLine(0, "State: OPEN");
             }
             break;
         case State::TimeConfig:
+            Serial.println("[Locker] State -> TIME_CONFIG");
             if (_lcd) {
                 _lcd->clear();
                 _lcd->printLine(0, "Configure time");
@@ -130,6 +138,7 @@ void Locker::goToState(State s) {
             }
             break;
         case State::TimeConfirm:
+            Serial.println("[Locker] State -> TIME_CONFIRM");
             if (_lcd) {
                 _lcd->clear();
                 // show configured time on line 0 and instruction on line 1
@@ -138,6 +147,7 @@ void Locker::goToState(State s) {
             }
             break;
         case State::Closed:
+            Serial.println("[Locker] State -> CLOSED");
             if (_lcd) {
                 _lcd->clear();
                 _lcd->printLine(0, "State: CLOSED");
@@ -176,24 +186,35 @@ void Locker::increaseConfig() {
     uint32_t step = 10 * 60; // 10 minutes in seconds
     uint32_t maxS = 24UL * 3600UL;
     _configSeconds = min(_configSeconds + step, maxS);
+    Serial.print("[Locker] Config increased to: ");
+    Serial.print(_configSeconds / 60);
+    Serial.println(" minutes");
 }
 
 void Locker::decreaseConfig() {
     uint32_t step = 10 * 60; // 10 minutes
     if (_configSeconds > step) _configSeconds -= step;
     else _configSeconds = 0;
+    Serial.print("[Locker] Config decreased to: ");
+    Serial.print(_configSeconds / 60);
+    Serial.println(" minutes");
 }
 
 void Locker::lockDoor() {
+    Serial.println("[Locker] Locking door...");
     if (_relay) _relay->off();
 }
 
 void Locker::unlockDoor() {
+    Serial.println("[Locker] Unlocking door...");
     if (_relay) _relay->on();
 }
 
 void Locker::pulseUnlock(uint32_t durationMs) {
     if (!_relay) return;
+    Serial.print("[Locker] Manual unlock pulse for ");
+    Serial.print(durationMs);
+    Serial.println(" ms");
     _relay->on();
     uint32_t now = millis();
     _manualUnlockEndMs = now + durationMs;
@@ -209,9 +230,13 @@ void Locker::startTimer(uint32_t seconds) {
     // save remaining ms for persistence (atomic write)
     saveTimer(durationMs);
     _lastSaveMs = now;
+    Serial.print("[Locker] Timer started: ");
+    Serial.print(seconds);
+    Serial.println(" seconds");
 }
 
 void Locker::stopTimer() {
+    Serial.println("[Locker] Timer stopped");
     _timerRunning = false;
     _timerEndMs = 0;
     _lastSaveMs = 0;
@@ -221,11 +246,18 @@ void Locker::stopTimer() {
 bool Locker::readSavedTimer(uint32_t &remainingMs) {
     remainingMs = 0;
     const char *path = "/locker_timer.bin";
-    if (!LittleFS.exists(path)) return false;
+    if (!LittleFS.exists(path)) {
+        Serial.println("[Locker] No saved timer file found");
+        return false;
+    }
     File f = LittleFS.open(path, "r");
-    if (!f) return false;
+    if (!f) {
+        Serial.println("[Locker] ERROR: Failed to open timer file");
+        return false;
+    }
     if (f.size() < 4) {
         f.close();
+        Serial.println("[Locker] ERROR: Timer file corrupted (invalid size)");
         return false;
     }
     uint32_t val = 0;
@@ -236,6 +268,9 @@ bool Locker::readSavedTimer(uint32_t &remainingMs) {
     val |= ((uint32_t)(uint8_t)f.read()) << 24;
     f.close();
     remainingMs = val;
+    Serial.print("[Locker] Saved timer read: ");
+    Serial.print(remainingMs);
+    Serial.println(" ms");
     return true;
 }
 
@@ -244,7 +279,10 @@ void Locker::saveTimer(uint32_t remainingMs) {
     const char *path = "/locker_timer.bin";
     // Write to temp file then rename for atomicity
     File f = LittleFS.open(tmp, "w");
-    if (!f) return;
+    if (!f) {
+        Serial.println("[Locker] ERROR: Failed to save timer file");
+        return;
+    }
     // write 4 bytes little endian
     f.write((uint8_t)(remainingMs & 0xFF));
     f.write((uint8_t)((remainingMs >> 8) & 0xFF));
@@ -255,9 +293,15 @@ void Locker::saveTimer(uint32_t remainingMs) {
     // remove old and rename
     if (LittleFS.exists(path)) LittleFS.remove(path);
     LittleFS.rename(tmp, path);
+    Serial.print("[Locker] Timer saved: ");
+    Serial.print(remainingMs);
+    Serial.println(" ms");
 }
 
 void Locker::clearSavedTimer() {
     const char *path = "/locker_timer.bin";
-    if (LittleFS.exists(path)) LittleFS.remove(path);
+    if (LittleFS.exists(path)) {
+        LittleFS.remove(path);
+        Serial.println("[Locker] Saved timer cleared");
+    }
 }

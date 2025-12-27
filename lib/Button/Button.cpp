@@ -19,8 +19,9 @@ Button::Button(uint8_t pin,
       _lastReleaseTime(0) {}
 
 void Button::begin() {
-    Serial.println("Button initialized on pin " + String(_pin));
     pinMode(_pin, INPUT_PULLUP);
+    Serial.print("[Button] Initialized on pin: ");
+    Serial.println(_pin);
 }
 
 void Button::update() {
@@ -80,6 +81,9 @@ bool Button::isPressed() const {
 bool Button::wasPressed() {
     if (_pressedEvent) {
         _pressedEvent = false;
+        Serial.print("[Button] Pressed (pin: ");
+        Serial.print(_pin);
+        Serial.println(")");
         return true;
     }
     return false;
@@ -88,6 +92,9 @@ bool Button::wasPressed() {
 bool Button::wasLongPressed() {
     if (_longPressEvent) {
         _longPressEvent = false;
+        Serial.print("[Button] Long pressed (pin: ");
+        Serial.print(_pin);
+        Serial.println(")");
         return true;
     }
     return false;
@@ -96,6 +103,9 @@ bool Button::wasLongPressed() {
 bool Button::wasDoubleClicked() {
     if (_doubleClickEvent) {
         _doubleClickEvent = false;
+        Serial.print("[Button] Double clicked (pin: ");
+        Serial.print(_pin);
+        Serial.println(")");
         return true;
     }
     return false;

@@ -9,6 +9,7 @@ void LCD_I2C::begin() {
     _lcd.init();
     _lcd.backlight();
     _lcd.clear();
+    Serial.println("[LCD_I2C] Initialized at address 0x27");
 }
 
 // Effacer l'écran
