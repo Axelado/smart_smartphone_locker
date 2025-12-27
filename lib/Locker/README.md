@@ -104,7 +104,7 @@ Returns the configured duration (seconds).
 #include "Locker.h"
 
 #define BUTTON_OK_PIN D5
-#define BUTTON_MINUS_PIN D6
+#define BUTTON_MINUS_PIN D3
 #define BUTTON_PLUS_PIN D7
 #define RELAY_LOCK_PIN D8
 

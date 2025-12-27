@@ -24,7 +24,7 @@ This project implements a finite state machine (FSM) to control a lock with:
 
 ```text
 Button OK:    D5
-Button Minus: D6
+Button Minus: D3
 Button Plus:  D7
 Relay Lock:   D8
 LCD I2C:      SDA/SCL (D2/D1 on D1 Mini)
